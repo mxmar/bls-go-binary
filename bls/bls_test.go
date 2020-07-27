@@ -128,6 +128,27 @@ func TestCast(t *testing.T) {
 	}
 }
 
+func TestAggregate(t *testing.T) {
+	Init(BLS12_381)
+	var sec SecretKey
+	sec.SetByCSPRNG()
+	const n = 1000
+	sigs := make([]Sign, n)
+	sigs2 := make(chan *Sign, n)
+	msg := make([]byte, 1)
+	for i := 0; i < n; i++ {
+		msg[0] = byte(i)
+		sigs[i] = *sec.SignByte(msg)
+		sigs2 <- &sigs[i]
+	}
+	var aggSig Sign
+	aggSig.Aggregate(sigs)
+	var aggSig2 Sign
+	aggSig2.AggregateMT(sigs2)
+	if !aggSig.IsEqual(&aggSig2) {
+		t.Error("AggregateMT")
+	}
+}
 
 func BenchmarkPairing(b *testing.B) {
 	Init(BLS12_381)
