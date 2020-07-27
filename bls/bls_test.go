@@ -128,22 +128,26 @@ func TestCast(t *testing.T) {
 	}
 }
 
-func TestAggregate(t *testing.T) {
-	Init(BLS12_381)
+func prepareAggregate(n int) (sigs []Sign, sigs2 chan *Sign) {
 	var sec SecretKey
 	sec.SetByCSPRNG()
-	const n = 1000
-	sigs := make([]Sign, n)
-	sigs2 := make(chan *Sign, n)
+	sigs = make([]Sign, n)
+	sigs2 = make(chan *Sign, n)
 	msg := make([]byte, 1)
 	for i := 0; i < n; i++ {
 		msg[0] = byte(i)
 		sigs[i] = *sec.SignByte(msg)
 		sigs2 <- &sigs[i]
 	}
+	return sigs, sigs2
+}
+
+func TestAggregate(t *testing.T) {
+	Init(BLS12_381)
+	sigs, sigs2 := prepareAggregate(1000)
 	var aggSig Sign
-	aggSig.Aggregate(sigs)
 	var aggSig2 Sign
+	aggSig.Aggregate(sigs)
 	aggSig2.AggregateMT(sigs2)
 	if !aggSig.IsEqual(&aggSig2) {
 		t.Error("AggregateMT")
@@ -191,4 +195,18 @@ func BenchmarkPairing3(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		comparePairing3(&P1, &Q1, &P2, &Q2)
 	}
+}
+
+func BenchmarkAggregate(b *testing.B) {
+	sigs, _ := prepareAggregate(1000)
+	b.ResetTimer()
+	var aggSig Sign
+	aggSig.Aggregate(sigs)
+}
+
+func BenchmarkAggregateMT(b *testing.B) {
+	_, sigs := prepareAggregate(1000)
+	b.ResetTimer()
+	var aggSig Sign
+	aggSig.AggregateMT(sigs)
 }
