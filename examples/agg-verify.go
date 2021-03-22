@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/herumi/bls-go-binary/bls"
+	"github.com/mxmar/bls-go-binary/bls"
 )
 
 var g_Qcoeff []uint64
